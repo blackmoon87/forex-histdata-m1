@@ -1,535 +1,287 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>forex-histdata-m1 — Free Forex 1-Minute Historical Data</title>
-  <meta name="description" content="Download the complete HistData.com ASCII 1-minute bar dataset for all major forex pairs. Free, open, auto-updated." />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Forex M1 Data — Free 1-Minute Historical Bars</title>
+  <meta name="description" content="Free forex 1-minute OHLCV data. Pick a pair, pick a year, download instantly."/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet"/>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#07090f;--surface:#0e1420;--card:#131c2b;--border:rgba(100,160,255,.1);
+      --accent:#4f9eff;--accent2:#a78bfa;--gold:#f59e0b;--green:#34d399;
+      --text:#dde6f0;--muted:#4a5568;--glow:rgba(79,158,255,.15);
+    }
+    html{scroll-behavior:smooth}
+    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
 
-    :root {
-      --bg:         #060b14;
-      --surface:    #0d1624;
-      --card:       #111d2e;
-      --border:     rgba(99,179,255,0.12);
-      --accent:     #38bdf8;
-      --accent2:    #818cf8;
-      --gold:       #fbbf24;
-      --green:      #34d399;
-      --red:        #f87171;
-      --text:       #e2e8f0;
-      --muted:      #64748b;
-      --glow:       rgba(56,189,248,0.18);
+    /* NAV */
+    nav{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:.9rem 2rem;
+      background:rgba(7,9,15,.85);backdrop-filter:blur(12px);
+      border-bottom:1px solid var(--border);
+      position:sticky;top:0;z-index:100;
     }
+    .logo{font-weight:800;font-size:1rem;color:var(--accent);letter-spacing:.02em;display:flex;align-items:center;gap:.5rem}
+    .logo svg{width:20px;height:20px}
+    .nav-right{display:flex;align-items:center;gap:.8rem}
+    .badge{background:var(--card);border:1px solid var(--border);border-radius:99px;padding:.25rem .7rem;font-size:.72rem;color:var(--green);font-weight:600}
+    .btn-coffee{
+      display:inline-flex;align-items:center;gap:.4rem;
+      background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#1c1208;
+      border:none;border-radius:8px;padding:.4rem .9rem;
+      font-size:.78rem;font-weight:700;cursor:pointer;text-decoration:none;
+      transition:all .2s;
+    }
+    .btn-coffee:hover{transform:translateY(-1px);box-shadow:0 0 20px rgba(251,191,36,.4)}
 
-    html { scroll-behavior: smooth; }
+    /* HERO */
+    .hero{text-align:center;padding:5rem 1rem 3rem}
+    .hero h1{font-size:clamp(2rem,5vw,3.5rem);font-weight:800;line-height:1.1;letter-spacing:-.03em}
+    .hero h1 span{background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .hero p{color:var(--muted);margin-top:.8rem;font-size:1rem}
 
-    body {
-      font-family: 'Inter', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      overflow-x: hidden;
+    /* STATS BAR */
+    .stats{
+      display:flex;justify-content:center;gap:2.5rem;flex-wrap:wrap;
+      padding:1rem 1rem 3rem;
     }
+    .stat{text-align:center}
+    .stat-n{font-size:1.8rem;font-weight:800;color:var(--accent)}
+    .stat-l{font-size:.72rem;color:var(--muted);margin-top:.1rem}
 
-    /* ── CANVAS BACKGROUND ── */
-    #bg-canvas {
-      position: fixed; inset: 0; z-index: 0;
-      pointer-events: none;
+    /* SEARCH */
+    .search-wrap{max-width:420px;margin:0 auto 2rem;position:relative}
+    .search-wrap input{
+      width:100%;background:var(--card);border:1px solid var(--border);
+      border-radius:12px;padding:.75rem 1rem .75rem 2.8rem;
+      color:var(--text);font-size:.9rem;font-family:'Inter',sans-serif;
+      outline:none;transition:border-color .2s;
     }
+    .search-wrap input:focus{border-color:var(--accent)}
+    .search-wrap svg{position:absolute;left:.85rem;top:50%;transform:translateY(-50%);opacity:.35;width:16px;height:16px;stroke:var(--text)}
 
-    main { position: relative; z-index: 1; }
+    /* LAYOUT */
+    .app{display:grid;grid-template-columns:220px 1fr;gap:1.5rem;max-width:1000px;margin:0 auto;padding:0 1.5rem 4rem}
 
-    /* ── NAV ── */
-    nav {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 1.2rem 2.5rem;
-      background: rgba(6,11,20,0.7);
-      backdrop-filter: blur(14px);
-      border-bottom: 1px solid var(--border);
-      position: sticky; top: 0; z-index: 100;
+    /* PAIR LIST */
+    .pairs-panel{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:.5rem;height:fit-content;position:sticky;top:72px}
+    .pair-item{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:.55rem .9rem;border-radius:9px;cursor:pointer;
+      font-family:'JetBrains Mono',monospace;font-size:.82rem;font-weight:500;
+      transition:all .15s;color:var(--muted);
     }
-    .nav-logo {
-      font-size: 1rem; font-weight: 700; letter-spacing: .04em;
-      color: var(--accent);
-      display: flex; align-items: center; gap: .5rem;
-    }
-    .nav-logo svg { width: 22px; height: 22px; }
-    .nav-links { display: flex; gap: 1.5rem; }
-    .nav-links a {
-      text-decoration: none; color: var(--muted); font-size: .85rem;
-      transition: color .2s;
-    }
-    .nav-links a:hover { color: var(--text); }
-    .nav-badge {
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: 99px; padding: .3rem .8rem;
-      font-size: .75rem; color: var(--accent); font-weight: 600;
-    }
+    .pair-item:hover{background:rgba(79,158,255,.08);color:var(--text)}
+    .pair-item.active{background:rgba(79,158,255,.14);color:var(--accent)}
+    .pair-count{font-size:.65rem;background:var(--card);border-radius:99px;padding:.1rem .4rem;color:var(--muted)}
 
-    /* ── HERO ── */
-    .hero {
-      text-align: center;
-      padding: 7rem 1.5rem 5rem;
+    /* FILES PANEL */
+    .files-panel h2{font-size:1.2rem;font-weight:700;margin-bottom:1.2rem;color:var(--text)}
+    .files-panel h2 span{color:var(--accent)}
+    .year-group{margin-bottom:1.2rem}
+    .year-label{font-size:.7rem;font-weight:700;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;margin-bottom:.5rem}
+    .file-grid{display:flex;flex-wrap:wrap;gap:.5rem}
+    .dl-btn{
+      display:inline-flex;align-items:center;gap:.35rem;
+      background:var(--card);border:1px solid var(--border);
+      border-radius:8px;padding:.45rem .85rem;
+      font-size:.78rem;font-weight:600;color:var(--text);
+      text-decoration:none;transition:all .15s;
+      font-family:'JetBrains Mono',monospace;
     }
-    .hero-tag {
-      display: inline-flex; align-items: center; gap: .5rem;
-      background: rgba(56,189,248,0.08);
-      border: 1px solid rgba(56,189,248,0.25);
-      border-radius: 99px; padding: .35rem 1rem;
-      font-size: .75rem; color: var(--accent); font-weight: 600;
-      margin-bottom: 1.8rem; letter-spacing: .06em;
-      animation: fadeUp .6s ease both;
-    }
-    .hero-tag span { width: 6px; height: 6px; border-radius: 50%; background: var(--green); display: inline-block; animation: pulse 1.4s infinite; }
+    .dl-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(79,158,255,.07);transform:translateY(-1px)}
+    .dl-btn svg{width:12px;height:12px;stroke:currentColor;flex-shrink:0}
+    .monthly{border-color:rgba(167,139,250,.25);color:var(--accent2)}
+    .monthly:hover{border-color:var(--accent2);color:var(--accent2);background:rgba(167,139,250,.07)}
 
-    h1 {
-      font-size: clamp(2.4rem, 6vw, 4.2rem);
-      font-weight: 800; line-height: 1.1;
-      letter-spacing: -.03em;
-      animation: fadeUp .6s .1s ease both;
-    }
-    h1 em {
-      font-style: normal;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    }
-    .hero-sub {
-      margin-top: 1.4rem;
-      color: var(--muted); font-size: 1.1rem; max-width: 580px; margin-inline: auto;
-      line-height: 1.7;
-      animation: fadeUp .6s .2s ease both;
-    }
-    .hero-actions {
-      margin-top: 2.5rem;
-      display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;
-      animation: fadeUp .6s .3s ease both;
-    }
-    .btn {
-      display: inline-flex; align-items: center; gap: .5rem;
-      padding: .75rem 1.6rem; border-radius: 10px;
-      font-size: .9rem; font-weight: 600; cursor: pointer;
-      text-decoration: none; transition: all .2s; border: none;
-    }
-    .btn-primary {
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      color: #fff;
-      box-shadow: 0 0 24px rgba(56,189,248,0.3);
-    }
-    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 36px rgba(56,189,248,0.45); }
-    .btn-ghost {
-      background: var(--card); border: 1px solid var(--border); color: var(--text);
-    }
-    .btn-ghost:hover { background: rgba(255,255,255,0.06); transform: translateY(-2px); }
+    /* EMPTY */
+    .empty{text-align:center;padding:4rem 1rem;color:var(--muted)}
+    .empty svg{width:48px;height:48px;stroke:var(--muted);opacity:.3;margin:0 auto 1rem;display:block}
 
-    /* ── STATS ── */
-    .stats {
-      display: flex; justify-content: center; flex-wrap: wrap; gap: 1.5rem;
-      padding: 1rem 1.5rem 4rem;
-      animation: fadeUp .6s .4s ease both;
+    /* DONATE */
+    .donate{
+      max-width:480px;margin:2rem auto 4rem;text-align:center;
+      background:linear-gradient(135deg,#12203a,#0d1624);
+      border:1px solid rgba(251,191,36,.2);border-radius:20px;
+      padding:2.5rem 2rem;
     }
-    .stat-card {
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: 16px; padding: 1.4rem 2rem;
-      text-align: center; min-width: 140px;
-      position: relative; overflow: hidden;
-      transition: transform .2s, box-shadow .2s;
+    .donate .cup{font-size:2.5rem;margin-bottom:.8rem}
+    .donate h3{font-size:1.3rem;font-weight:700}
+    .donate p{color:var(--muted);font-size:.88rem;margin:.6rem 0 1.5rem;line-height:1.6}
+    .btn-coffee-lg{
+      display:inline-flex;align-items:center;gap:.5rem;
+      background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#1c1208;
+      border:none;border-radius:10px;padding:.75rem 1.8rem;
+      font-size:.95rem;font-weight:700;cursor:pointer;text-decoration:none;
+      box-shadow:0 0 24px rgba(251,191,36,.3);
+      transition:all .2s;
     }
-    .stat-card:hover { transform: translateY(-4px); box-shadow: 0 8px 32px var(--glow); }
-    .stat-card::before {
-      content: ''; position: absolute; inset: 0;
-      background: linear-gradient(135deg, rgba(56,189,248,.06), transparent);
-    }
-    .stat-val { font-size: 2rem; font-weight: 800; color: var(--accent); }
-    .stat-lbl { font-size: .78rem; color: var(--muted); margin-top: .2rem; }
+    .btn-coffee-lg:hover{transform:translateY(-2px);box-shadow:0 0 40px rgba(251,191,36,.5)}
 
-    /* ── SECTION LABEL ── */
-    .section-label {
-      text-align: center; margin-bottom: 2.5rem;
-    }
-    .section-label h2 { font-size: 1.8rem; font-weight: 700; }
-    .section-label p { color: var(--muted); margin-top: .5rem; font-size: .95rem; }
+    footer{text-align:center;padding:1.5rem;border-top:1px solid var(--border);color:var(--muted);font-size:.75rem}
+    footer a{color:var(--accent);text-decoration:none}
 
-    /* ── PAIRS GRID ── */
-    section { padding: 4rem 2rem; max-width: 1100px; margin-inline: auto; }
-
-    .pairs-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-      gap: .7rem;
-    }
-    .pair-chip {
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: 10px; padding: .6rem .8rem;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: .78rem; font-weight: 600; color: var(--text);
-      text-align: center;
-      transition: all .15s;
-      cursor: default;
-    }
-    .pair-chip:hover {
-      border-color: var(--accent); color: var(--accent);
-      box-shadow: 0 0 12px rgba(56,189,248,0.15);
-    }
-
-    /* ── HOW TO USE ── */
-    .steps { display: grid; gap: 1rem; }
-    .step {
-      display: flex; gap: 1.2rem; align-items: flex-start;
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: 14px; padding: 1.4rem 1.6rem;
-      transition: box-shadow .2s;
-    }
-    .step:hover { box-shadow: 0 4px 24px var(--glow); }
-    .step-num {
-      width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      display: flex; align-items: center; justify-content: center;
-      font-size: .8rem; font-weight: 800; color: #fff;
-    }
-    .step h3 { font-size: .95rem; font-weight: 600; margin-bottom: .3rem; }
-    .step p { font-size: .85rem; color: var(--muted); line-height: 1.6; }
-
-    /* ── CODE BLOCK ── */
-    .code-block {
-      background: #070c14; border: 1px solid var(--border);
-      border-radius: 14px; padding: 1.4rem 1.6rem;
-      position: relative; margin-top: 1.5rem;
-    }
-    .code-block pre {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: .82rem; color: var(--accent);
-      overflow-x: auto; line-height: 1.9;
-      white-space: pre-wrap;
-    }
-    .code-block .comment { color: var(--muted); }
-    .code-block .kw { color: var(--accent2); }
-    .code-block .str { color: var(--green); }
-    .copy-btn {
-      position: absolute; top: .8rem; right: .8rem;
-      background: var(--surface); border: 1px solid var(--border);
-      color: var(--muted); border-radius: 7px;
-      padding: .3rem .7rem; font-size: .7rem; cursor: pointer;
-      transition: all .2s;
-    }
-    .copy-btn:hover { color: var(--accent); border-color: var(--accent); }
-
-    /* ── DONATE ── */
-    .donate-section {
-      text-align: center;
-      padding: 5rem 1.5rem;
-    }
-    .donate-card {
-      max-width: 520px; margin-inline: auto;
-      background: linear-gradient(135deg, #12203a, #0d1624);
-      border: 1px solid rgba(251,191,36,0.25);
-      border-radius: 24px;
-      padding: 3rem 2.5rem;
-      position: relative; overflow: hidden;
-      box-shadow: 0 0 60px rgba(251,191,36,0.08);
-    }
-    .donate-card::before {
-      content: '';
-      position: absolute; top: -60px; right: -60px;
-      width: 200px; height: 200px; border-radius: 50%;
-      background: radial-gradient(circle, rgba(251,191,36,0.12), transparent 70%);
-    }
-    .coffee-icon {
-      font-size: 3.5rem; margin-bottom: 1rem;
-      animation: float 3s ease-in-out infinite;
-    }
-    .donate-card h2 { font-size: 1.7rem; font-weight: 800; }
-    .donate-card p {
-      color: var(--muted); margin: .8rem 0 2rem;
-      font-size: .95rem; line-height: 1.7;
-    }
-    .btn-coffee {
-      display: inline-flex; align-items: center; gap: .6rem;
-      background: linear-gradient(135deg, #fbbf24, #f59e0b);
-      color: #1c1917;
-      padding: .9rem 2.2rem; border-radius: 12px;
-      font-size: 1rem; font-weight: 700;
-      text-decoration: none;
-      box-shadow: 0 0 30px rgba(251,191,36,0.35);
-      transition: all .2s;
-    }
-    .btn-coffee:hover {
-      transform: translateY(-3px) scale(1.03);
-      box-shadow: 0 0 50px rgba(251,191,36,0.5);
-    }
-    .btn-coffee svg { width: 20px; height: 20px; }
-
-    /* ── FOOTER ── */
-    footer {
-      text-align: center; padding: 2rem;
-      border-top: 1px solid var(--border);
-      color: var(--muted); font-size: .8rem;
-    }
-    footer a { color: var(--accent); text-decoration: none; }
-
-    /* ── DIVIDER ── */
-    .divider {
-      border: none; border-top: 1px solid var(--border);
-      margin: 0;
-    }
-
-    /* ── ANIMATIONS ── */
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; } 50% { opacity: .3; }
-    }
-    @keyframes float {
-      0%, 100% { transform: translateY(0); }
-      50%       { transform: translateY(-8px); }
+    @media(max-width:640px){
+      .app{grid-template-columns:1fr}
+      .pairs-panel{position:static;display:flex;flex-wrap:wrap;gap:.3rem;padding:.6rem}
+      .pair-item{padding:.4rem .65rem;font-size:.72rem}
     }
   </style>
 </head>
 <body>
 
-<canvas id="bg-canvas"></canvas>
+<nav>
+  <div class="logo">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+    Forex M1 Data
+  </div>
+  <div class="nav-right">
+    <span class="badge" id="nav-count">— files</span>
+    <a class="btn-coffee" href="https://buymeacoffee.com/black.moon" target="_blank" rel="noopener">
+      ☕ Buy me a coffee
+    </a>
+  </div>
+</nav>
 
-<main>
-  <!-- NAV -->
-  <nav>
-    <div class="nav-logo">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
-        <polyline points="16 7 22 7 22 13"/>
-      </svg>
-      forex-histdata-m1
-    </div>
-    <div class="nav-links">
-      <a href="#pairs">Pairs</a>
-      <a href="#usage">Usage</a>
-      <a href="#donate">Donate</a>
-    </div>
-    <span class="nav-badge">M1 · ASCII</span>
-  </nav>
+<div class="hero">
+  <h1>Free Forex<br/><span>1-Minute History</span></h1>
+  <p>Pick a pair · pick a year · download instantly</p>
+</div>
 
-  <!-- HERO -->
-  <div class="hero">
-    <div class="hero-tag">
-      <span></span> OPEN · FREE · COMPLETE
-    </div>
-    <h1>Complete Forex<br/><em>1-Minute History</em></h1>
-    <p class="hero-sub">
-      Full HistData.com ASCII dataset — all major &amp; exotic pairs,
-      every year, every month. Ready to clone and use instantly.
-    </p>
-    <div class="hero-actions">
-      <a id="btn-clone" class="btn btn-primary" href="https://github.com/blackmoon87/forex-histdata-m1" target="_blank">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
-        Clone on GitHub
-      </a>
-      <a id="btn-download" class="btn btn-ghost" href="https://github.com/blackmoon87/forex-histdata-m1/archive/refs/heads/main.zip" target="_blank">
-        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Download ZIP
-      </a>
+<div class="stats">
+  <div class="stat"><div class="stat-n" id="s-pairs">–</div><div class="stat-l">Pairs</div></div>
+  <div class="stat"><div class="stat-n" id="s-files">–</div><div class="stat-l">Files</div></div>
+  <div class="stat"><div class="stat-n">M1</div><div class="stat-l">Timeframe</div></div>
+  <div class="stat"><div class="stat-n">ZIP</div><div class="stat-l">Format</div></div>
+</div>
+
+<div style="max-width:1000px;margin:0 auto;padding:0 1.5rem">
+  <div class="search-wrap">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" id="search" placeholder="Search pair… e.g. EURUSD" autocomplete="off"/>
+  </div>
+</div>
+
+<div class="app">
+  <div class="pairs-panel" id="pairs-panel"></div>
+  <div class="files-panel" id="files-panel">
+    <div class="empty">
+      <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 7h18M3 12h18M3 17h18"/></svg>
+      Select a pair to see downloads
     </div>
   </div>
+</div>
 
-  <!-- STATS -->
-  <div class="stats">
-    <div class="stat-card">
-      <div class="stat-val">80+</div>
-      <div class="stat-lbl">Forex Pairs</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-val">20+</div>
-      <div class="stat-lbl">Years of History</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-val">M1</div>
-      <div class="stat-lbl">Timeframe</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-val">ASCII</div>
-      <div class="stat-lbl">Format</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-val">Free</div>
-      <div class="stat-lbl">Always</div>
-    </div>
-  </div>
+<div class="donate">
+  <div class="cup">☕</div>
+  <h3>Support this project</h3>
+  <p>Free data, zero ads. If this saved you time,<br/>a coffee keeps it running!</p>
+  <a class="btn-coffee-lg" href="https://buymeacoffee.com/black.moon" target="_blank" rel="noopener">
+    Buy me a coffee
+  </a>
+</div>
 
-  <hr class="divider" />
-
-  <!-- PAIRS -->
-  <section id="pairs">
-    <div class="section-label">
-      <h2>Available Pairs</h2>
-      <p>All pairs sourced from HistData.com — major, minor &amp; exotic</p>
-    </div>
-    <div class="pairs-grid" id="pairs-grid">
-      <!-- injected by JS -->
-    </div>
-  </section>
-
-  <hr class="divider" />
-
-  <!-- USAGE -->
-  <section id="usage">
-    <div class="section-label">
-      <h2>How to Use</h2>
-      <p>Get the full dataset running in under 2 minutes</p>
-    </div>
-    <div class="steps">
-      <div class="step">
-        <div class="step-num">1</div>
-        <div>
-          <h3>Clone the repo</h3>
-          <p>Pull the downloader script and all metadata to your machine.</p>
-        </div>
-      </div>
-      <div class="step">
-        <div class="step-num">2</div>
-        <div>
-          <h3>Install dependencies</h3>
-          <p>A single pip command gets you everything you need — <code style="color:var(--accent);font-family:'JetBrains Mono',monospace">requests</code> and <code style="color:var(--accent);font-family:'JetBrains Mono',monospace">beautifulsoup4</code>.</p>
-        </div>
-      </div>
-      <div class="step">
-        <div class="step-num">3</div>
-        <div>
-          <h3>Run the downloader</h3>
-          <p>The script auto-discovers all pairs, scrapes tokens, and downloads every zip in parallel.</p>
-        </div>
-      </div>
-      <div class="step">
-        <div class="step-num">4</div>
-        <div>
-          <h3>Use in your strategy</h3>
-          <p>Unzip any file to get a clean OHLCV CSV — ready for backtesting, ML pipelines, or research.</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="code-block">
-      <button class="copy-btn" onclick="copyCode()">Copy</button>
-      <pre id="code-pre"><span class="comment"># Clone</span>
-<span class="kw">git</span> clone https://github.com/blackmoon87/forex-histdata-m1.git
-<span class="kw">cd</span> forex-histdata-m1
-
-<span class="comment"># Install deps</span>
-<span class="kw">pip</span> install requests beautifulsoup4
-
-<span class="comment"># Download all pairs (runs in background)</span>
-<span class="kw">python</span> download_histdata.py</pre>
-    </div>
-  </section>
-
-  <hr class="divider" />
-
-  <!-- DONATE -->
-  <div class="donate-section" id="donate">
-    <div class="donate-card">
-      <div class="coffee-icon">☕</div>
-      <h2>Support This Project</h2>
-      <p>
-        Building &amp; maintaining free datasets takes time.<br/>
-        If this saved you hours of work, consider buying me a coffee!
-      </p>
-      <a id="btn-coffee" class="btn-coffee" href="https://buymeacoffee.com/black.moon" target="_blank" rel="noopener">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.216 6.415l-.132-.666c-.119-.598-.388-1.163-1.001-1.379-.197-.069-.42-.098-.57-.241-.152-.143-.196-.366-.231-.572-.065-.378-.125-.756-.192-1.133-.057-.325-.102-.69-.25-.987-.195-.4-.597-.634-.996-.788a5.723 5.723 0 00-.626-.194c-1-.263-2.05-.36-3.077-.416a25.834 25.834 0 00-3.7.062c-.915.083-1.88.184-2.75.5-.318.116-.646.256-.919.479-.338.281-.correlation.55-.36.857-.06.297-.088.611-.103.921-.029.499-.065 1-.also.5-.014.278 0 .567.133.81.154.29.456.426.745.518.647.204 1.355.274 2.02.368.393.057.785.115 1.178.163-.056.432-.125.864-.138 1.3-.011.36.013.72.066 1.076.055.369.147.756.371 1.066.224.31.59.48.965.546.35.06.7.062 1.05.048.322-.013.643-.04.963-.065.306-.023.613-.048.918-.077.563-.052 1.126-.122 1.69-.155.539-.031 1.076-.022 1.613.009.527.031 1.054.075 1.58.124.521.048 1.042.1 1.561.163.516.062 1.032.135 1.548.213.272.041.55.09.82.108.417.027.865.006 1.235-.21.428-.245.604-.733.566-1.207-.032-.393-.21-.761-.42-1.089a5.34 5.34 0 00-.662-.793z"/></svg>
-        Buy me a coffee
-      </a>
-    </div>
-  </div>
-</main>
-
-<!-- FOOTER -->
 <footer>
-  <p>
-    Made with ❤️ by <a href="https://github.com/blackmoon87" target="_blank">blackmoon87</a> ·
-    Data source: <a href="http://www.histdata.com" target="_blank">HistData.com</a> ·
-    <a href="https://github.com/blackmoon87/forex-histdata-m1" target="_blank">GitHub</a>
-  </p>
+  <a href="https://github.com/blackmoon87/forex-histdata-m1" target="_blank">github.com/blackmoon87/forex-histdata-m1</a>
 </footer>
 
+<script src="histdata_zips/_files.js"></script>
 <script>
-  /* ── BACKGROUND CANVAS ── */
-  const canvas = document.getElementById('bg-canvas');
-  const ctx = canvas.getContext('2d');
-  let W, H, particles = [];
+const BASE = 'histdata_zips/';
+const REPO = 'https://github.com/blackmoon87/forex-histdata-m1/raw/main/histdata_zips/';
 
-  function resize() {
-    W = canvas.width = window.innerWidth;
-    H = canvas.height = window.innerHeight;
-  }
-  resize();
-  window.addEventListener('resize', resize);
+// ── Group by pair
+const byPair = {};
+FILES.forEach(r => {
+  if (!byPair[r.p]) byPair[r.p] = [];
+  byPair[r.p].push(r);
+});
+const pairs = Object.keys(byPair).sort();
 
-  class Particle {
-    constructor() { this.reset(); }
-    reset() {
-      this.x = Math.random() * W;
-      this.y = Math.random() * H;
-      this.r = Math.random() * 1.5 + .3;
-      this.vx = (Math.random() - .5) * .3;
-      this.vy = (Math.random() - .5) * .3;
-      this.alpha = Math.random() * .5 + .1;
-    }
-    update() {
-      this.x += this.vx; this.y += this.vy;
-      if (this.x < 0 || this.x > W || this.y < 0 || this.y > H) this.reset();
-    }
-    draw() {
-      ctx.beginPath();
-      ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(56,189,248,${this.alpha})`;
-      ctx.fill();
-    }
-  }
+// ── Stats
+document.getElementById('s-pairs').textContent = pairs.length;
+document.getElementById('s-files').textContent = FILES.length.toLocaleString();
+document.getElementById('nav-count').textContent = FILES.length.toLocaleString() + ' files';
 
-  for (let i = 0; i < 120; i++) particles.push(new Particle());
+// ── Render pair list
+const panel = document.getElementById('pairs-panel');
+let activePair = null;
 
-  function animate() {
-    ctx.clearRect(0, 0, W, H);
-    particles.forEach(p => { p.update(); p.draw(); });
-    requestAnimationFrame(animate);
-  }
-  animate();
+function renderPairs(filter = '') {
+  panel.innerHTML = '';
+  const fl = filter.toUpperCase();
+  pairs.filter(p => p.includes(fl)).forEach(p => {
+    const el = document.createElement('div');
+    el.className = 'pair-item' + (p === activePair ? ' active' : '');
+    el.innerHTML = `${p} <span class="pair-count">${byPair[p].length}</span>`;
+    el.addEventListener('click', () => { activePair = p; renderPairs(filter); renderFiles(p); });
+    panel.appendChild(el);
+  });
+}
 
-  /* ── PAIRS LIST ── */
-  const PAIRS = [
-    'EURUSD','GBPUSD','USDJPY','USDCHF','USDCAD','AUDUSD','NZDUSD',
-    'EURGBP','EURJPY','EURCHF','EURCAD','EURAUD','EURNZD',
-    'GBPJPY','GBPCHF','GBPCAD','GBPAUD','GBPNZD',
-    'AUDJPY','AUDCHF','AUDCAD','AUDNZD',
-    'NZDJPY','NZDCHF','NZDCAD',
-    'CADJPY','CADCHF','CHFJPY',
-    'XAUUSD','XAGUSD','XPTUSD',
-    'USDMXN','USDZAR','USDTRY','USDHKD','USDSGD','USDNOK','USDSEK','USDDKK',
-    'USDPLN','USDHUF','USDCZK','USDRUB','USDCNH',
-    'EURPLN','EURHUF','EURCZK','EURRUB','EURNOK','EURSEK','EURDKK',
-    'BTCUSD','ETHUSD','LTCUSD','XRPUSD',
-  ];
+// ── Render file list for a pair
+function renderFiles(pair) {
+  const fp = document.getElementById('files-panel');
+  const records = byPair[pair] || [];
 
-  const grid = document.getElementById('pairs-grid');
-  PAIRS.forEach(p => {
-    const div = document.createElement('div');
-    div.className = 'pair-chip';
-    div.textContent = p;
-    grid.appendChild(div);
+  // Group by year (first 4 digits of d)
+  const byYear = {};
+  records.forEach(r => {
+    const yr = r.d.slice(0, 4);
+    if (!byYear[yr]) byYear[yr] = [];
+    byYear[yr].push(r);
   });
 
-  /* ── COPY CODE ── */
-  function copyCode() {
-    const txt = document.getElementById('code-pre').innerText;
-    navigator.clipboard.writeText(txt).then(() => {
-      const btn = document.querySelector('.copy-btn');
-      btn.textContent = 'Copied!';
-      btn.style.color = 'var(--green)';
-      setTimeout(() => { btn.textContent = 'Copy'; btn.style.color = ''; }, 2000);
-    });
-  }
+  const years = Object.keys(byYear).sort((a,b) => b - a);  // newest first
+
+  fp.innerHTML = `<h2>Downloads — <span>${pair}</span></h2>`;
+  years.forEach(yr => {
+    const group = document.createElement('div');
+    group.className = 'year-group';
+    const isMonthly = byYear[yr].length > 1 && byYear[yr][0].d.length > 4;
+    // separate yearly vs monthly entries
+    const annual  = byYear[yr].filter(r => r.d.length === 4);
+    const monthly = byYear[yr].filter(r => r.d.length > 4);
+
+    let html = `<div class="year-label">${yr}</div><div class="file-grid">`;
+    annual.forEach(r  => { html += dlTag(r, false); });
+    monthly.forEach(r => { html += dlTag(r, true);  });
+    html += '</div>';
+    group.innerHTML = html;
+    fp.appendChild(group);
+  });
+}
+
+function dlTag(r, isMonthly) {
+  const label = isMonthly ? monthLabel(r.d) : r.d;
+  const url   = REPO + encodeURIComponent(r.f);
+  const cls   = isMonthly ? 'dl-btn monthly' : 'dl-btn';
+  return `<a class="${cls}" href="${url}" download="${r.f}" target="_blank">
+    <svg fill="none" viewBox="0 0 24 24" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    ${label}
+  </a>`;
+}
+
+function monthLabel(d) {
+  // d = e.g. "202603"
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const m = parseInt(d.slice(4), 10);
+  return months[m - 1] || d.slice(4);
+}
+
+// ── Search
+document.getElementById('search').addEventListener('input', e => {
+  renderPairs(e.target.value);
+});
+
+// ── Init
+renderPairs();
+// Auto-select first pair
+if (pairs.length) { activePair = pairs[0]; renderPairs(); renderFiles(pairs[0]); }
 </script>
 </body>
 </html>
